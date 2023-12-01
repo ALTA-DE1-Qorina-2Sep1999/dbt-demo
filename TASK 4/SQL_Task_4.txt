@@ -1,0 +1,40 @@
+CREATE TABLE stg_order_details (
+    order_date DATE,
+    quantity INT,
+    price DECIMAL(10, 2),
+    brand_name VARCHAR(50),
+    product_name VARCHAR(100)
+);
+
+INSERT INTO stg_order_details (order_date, quantity, price, brand_name, product_name)
+VALUES
+    ('2023-11-01', 10, 20.00, 'Apple', 'Apple'),
+    ('2023-11-01', 8, 15.00, 'Samsung', 'Samsung'),
+    ('2023-11-02', 5, 25.00, 'Apple', 'Sony'),
+    ('2023-11-02', 12, 18.00, 'Samsung', 'Sony'),
+    ('2023-11-02', 7, 30.00, 'Apple', 'Samsung');
+
+CREATE TABLE fct_per_brand_daily_sales (
+    brand_name VARCHAR(50),
+    order_date DATE,
+    total_quantity INT,
+    total_revenue DECIMAL(15, 2),
+    CONSTRAINT pk_brand_daily_sales PRIMARY KEY (brand_name, order_date)
+);
+
+INSERT INTO fct_per_brand_daily_sales (brand_name, order_date, total_quantity, total_revenue)
+SELECT
+    brand_name,
+    order_date,
+    SUM(quantity) AS total_quantity,
+    SUM(quantity * price) AS total_revenue
+FROM stg_order_details
+GROUP BY brand_name, order_date;
+
+SELECT COUNT(*) AS duplicate_count
+FROM (
+    SELECT order_date, brand_name, COUNT(*) AS count_per_combination
+    FROM fct_per_brand_daily_sales
+    GROUP BY order_date, brand_name
+    HAVING COUNT(*) > 1
+) AS duplicates;
